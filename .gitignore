@@ -1,3 +1,4 @@
 tests/config.yml
 data/*
+weaviate/*
 KB Chat.code-workspace

@@ -1,5 +1,4 @@
 ---
-version: '4'
 services:
   weaviate:
     command:
@@ -9,19 +8,33 @@ services:
     - '8080'
     - --scheme
     - http
-    image: cr.weaviate.io/semitechnologies/weaviate:1.24.20
+    image: cr.weaviate.io/semitechnologies/weaviate:1.25.4
     ports:
     - 8080:8080
     - 50051:50051
-    restart: on-failure:0
     volumes:
-    - C:\Users\Izogie\Desktop\Folders\Projects\Python\KB Chat\data:/var/lib/weaviate
+    - ./weaviate_data:/var/lib/weaviate
+    restart: on-failure:0
     environment:
-      OPENAI_APIKEY: $OPENAI_APIKEY
+      QNA_INFERENCE_API: 'http://qna-transformers:8080'
+      NER_INFERENCE_API: 'http://ner-transformers:8080'
+      SUM_INFERENCE_API: 'http://sum-transformers:8080'
       QUERY_DEFAULTS_LIMIT: 25
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
       PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
-      DEFAULT_VECTORIZER_MODULE: 'none'
-      ENABLE_MODULES: 'text2vec-palm,generative-palm,text2vec-huggingface'
+      DEFAULT_VECTORIZER_MODULE: 'text2vec-palm'
+      ENABLE_MODULES: 'text2vec-huggingface,text2vec-palm,qna-transformers,ner-transformers,sum-transformers,ref2vec-centroid,generative-palm'
       CLUSTER_HOSTNAME: 'node1'
+  qna-transformers:
+    image: cr.weaviate.io/semitechnologies/qna-transformers:distilbert-base-cased-distilled-squad
+    environment:
+      ENABLE_CUDA: '0'
+  ner-transformers:
+    image: cr.weaviate.io/semitechnologies/ner-transformers:dslim-bert-base-NER
+    environment:
+      ENABLE_CUDA: '0'
+  sum-transformers:
+    image: cr.weaviate.io/semitechnologies/sum-transformers:facebook-bart-large-cnn-1.0.0
+    environment:
+      ENABLE_CUDA: '0'
 ...
