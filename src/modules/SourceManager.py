@@ -7,7 +7,7 @@ class SourceManager:
 	def __init__(self, wiki_endpoint="coppermind.net") -> None:
 		self.wiki_endpoint=wiki_endpoint
 		self.user_agent = "TheataTest (numberticket+cm@proton.me)"
-		self.pages = {}
+		self.pages = []
 		self.data = []
 
 	def _init_mwclient(self, retries=3) -> None:
@@ -16,8 +16,9 @@ class SourceManager:
 				self.site = Site(self.wiki_endpoint, clients_useragent=self.user_agent)
 				print(f"MWClient Connected with {self.wiki_endpoint}")
 				return	
-			finally:
-				print(f"MWClient unable to connect with {self.wiki_endpoint}")
+			except:
+				pass
+		print(f"MWClient unable to connect with {self.wiki_endpoint}")
 		
 
 	def load_json(self, filename="pages.jsonl"):
@@ -64,11 +65,13 @@ class SourceManager:
 		parse multiple pages, append them to existing list, append them to json w/ raw wikicode objs
 		"""
 		for title in page_titles:
-			if self.pages is {}:
+			if self.pages == []:
 				self.pages = self.load_json()
-			if not update and title in self.pages.keys(): continue
+			# if not update:
+			# 	if len(self.pages) != 0:
+			# 		if title in [page['title'] for page in self.pages]: continue
 			# ignore cosmere check until after PoC
-			self.pages.update(self.wiki_parse(title))
+			self.pages.append(self.wiki_parse(title))
 		return self.pages
 
 	def get_sections(self, title, page):
@@ -124,13 +127,16 @@ class SourceManager:
 			cleaned_tag = tag.replace('{', '').replace('}', '')
 	
 			# Handle specific tag formats
-			if cleaned_tag.startswith(("update", "character", "cite", "quote","sidequote", "image", "partial","for")):
+			if cleaned_tag.startswith(("update", "character", "cite", "quote","sidequote", "image", "partial","for", "file")):
 				continue
 			elif tag.startswith("{{wob ref|"):
 				cleaned_tag = f"ref-wob-{cleaned_tag.split('|')[1]}"
 			elif tag.startswith("{{book ref|"):
 				parts = cleaned_tag.split('|')
 				cleaned_tag = "ref-book-" + "-".join(parts[1:])
+			elif tag.startswith("{{epigraph ref|"):
+				parts = cleaned_tag.split('|')
+				cleaned_tag = "ref-epi-" + "-".join(parts[1:])
 			elif tag.startswith("{{tag"):
 				# Split on pipe (|) and ignore the 'tag' part
 				parts = cleaned_tag.split('|')[1:]
@@ -211,8 +217,10 @@ class SourceManager:
 		return article
 
 	def prep_data_graph(self, page_titles):
+		self._init_mwclient()
 		pages = self.wiki_parse_pages(page_titles)
-		for page in pages.items():
+		for page in pages:
+			page = list(page.items())[0]
 			prepped_page = self.process_page(page)
 			self.data.append(prepped_page)
 		self.save_json(self.data)
