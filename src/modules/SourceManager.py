@@ -5,10 +5,20 @@ from re import match
 
 class SourceManager:
 	def __init__(self, wiki_endpoint="coppermind.net") -> None:
+		self.wiki_endpoint=wiki_endpoint
 		self.user_agent = "TheataTest (numberticket+cm@proton.me)"
-		self.site = Site(wiki_endpoint, clients_useragent=self.user_agent)
 		self.pages = {}
 		self.data = []
+
+	def _init_mwclient(self, retries=3) -> None:
+		for i in range(retries):
+			try:
+				self.site = Site(self.wiki_endpoint, clients_useragent=self.user_agent)
+				print(f"MWClient Connected with {self.wiki_endpoint}")
+				return	
+			finally:
+				print(f"MWClient unable to connect with {self.wiki_endpoint}")
+		
 
 	def load_json(self, filename="pages.jsonl"):
 		"""Loads data from a JSONLines file, or creates an empty one if it doesn't exist.
@@ -117,10 +127,10 @@ class SourceManager:
 			if cleaned_tag.startswith(("update", "character", "cite", "quote","sidequote", "image", "partial","for")):
 				continue
 			elif tag.startswith("{{wob ref|"):
-				cleaned_tag = f"wob_ref-{cleaned_tag.split('|')[1]}"
+				cleaned_tag = f"ref-wob-{cleaned_tag.split('|')[1]}"
 			elif tag.startswith("{{book ref|"):
 				parts = cleaned_tag.split('|')
-				cleaned_tag = "-".join(parts[1:])
+				cleaned_tag = "ref-book-" + "-".join(parts[1:])
 			elif tag.startswith("{{tag"):
 				# Split on pipe (|) and ignore the 'tag' part
 				parts = cleaned_tag.split('|')[1:]
