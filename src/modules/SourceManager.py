@@ -58,20 +58,22 @@ class SourceManager:
 		parse wiki page and return wiki code obj from MWParser
 		"""
 		page = self.site.pages[title]
-		return {page.name: mwp.parse(page.text())}
+		return page.name, page
 
-	def wiki_parse_pages(self, page_titles, update=False):
+	def wiki_parse_pages(self, page_titles, load=False, update=False):
 		"""
 		parse multiple pages, append them to existing list, append them to json w/ raw wikicode objs
 		"""
 		for title in page_titles:
-			if self.pages == []:
+			if load and len(self.pages) > 0:
 				self.pages = self.load_json()
 			# if not update:
 			# 	if len(self.pages) != 0:
 			# 		if title in [page['title'] for page in self.pages]: continue
 			# ignore cosmere check until after PoC
-			self.pages.append(self.wiki_parse(title))
+			title, page = self.wiki_parse(title)
+			page_parsed = mwp.parse(page.text())
+			self.pages.append({title: [page, page_parsed]})
 		return self.pages
 
 	def get_sections(self, title, page):
@@ -203,18 +205,19 @@ class SourceManager:
 		print(f"Processing {page[0]}")
 		title = page[0]
 		page = page[1]
-		if "redirect" in page.strip_code().lower():
+		if page[0].redirects_to() is not None:
 			return {
 				"title": title,
-				"links": self.get_links(page),
+				"links": self.get_links(page[1]),
 				"sections": None,
 				}
-		article = {
-				"title": title,
-				"links": self.get_links(page),
-				"sections": self.get_sections(title, page),
-				}
-		return article
+		else:
+			article = {
+					"title": title,
+					"links": self.get_links(page[1]),
+					"sections": self.get_sections(title, page[1]),
+					}
+			return article
 
 	def prep_data_graph(self, page_titles):
 		self._init_mwclient()
