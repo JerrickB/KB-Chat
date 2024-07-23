@@ -1,4 +1,5 @@
 tests/config.yml
+tests/chroma_test/*
 data/*
 weaviate/*
 KB Chat.code-workspace
