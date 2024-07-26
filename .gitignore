@@ -1,7 +1,11 @@
+src/modules/_pycache_
 tests/config.yml
 config.yml
-tests/chroma_test/*
+tests/chroma_test
+tests/chroma_test2
 data/*
 chroma/*
+src/chroma
 weaviate/*
 KB Chat.code-workspace
+tests/chroma_test/chroma.sqlite3

@@ -1,4 +1,5 @@
 from mwclient import Site
+import mwclient
 import mwparserfromhell as mwp
 import json
 from re import match
@@ -19,6 +20,7 @@ class SourceManager:
 			self.user_agent: str = "TheataTest (numberticket+cm@proton.me)"
 			self.pages: List[str] = []
 			self.data: List[Dict[str, Any]] = []
+			self.site = None
 
 	def _init_mwclient(self, retries: int = 3) -> None:
 		"""
@@ -72,12 +74,15 @@ class SourceManager:
 		Returns:
 			None
 		"""
-		# Convert sets to lists to avoid TypeError when writing to file
-		data = list(data) if isinstance(data, set) else data
-		# Write data to file in one go using json.dump
-		with open(filename, 'w') as file:
-			json.dump(data, file, separators=(',', ':\n'))
-		print(f"{filename} saved")
+		try:
+			with open(filename, 'w') as file:
+				if isinstance(data, set):
+					data = list(data)
+				for entry in data:
+					file.write(json.dumps(entry) +'\n')
+				print(f"{filename} saved")
+		except Exception as e:
+			print(f"Failed to save {filename} - {e}")
 
 	def wiki_parse(self, title: str) -> Tuple:
 		"""
@@ -89,6 +94,8 @@ class SourceManager:
 		Returns:
 			Tuple[str, mwp.Page]: A tuple containing the page name and the parsed MWParser Page object.
 		"""
+		if self.site is None:
+			self._init_mwclient()
 		page = self.site.pages[title]
 		return page.name, page
 
